@@ -1,0 +1,9 @@
+# dbt-specific files
+logs/
+target/
+dbt_packages/
+
+# BigQuery credentials
+*.json  # Excludes all JSON files (use carefully)
+.env     # Excludes environment variables file
+profiles.yml  # Excludes dbt profiles (contains credentials)

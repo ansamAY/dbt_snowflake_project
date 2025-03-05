@@ -1,0 +1,43 @@
+{# This is a dummy template, we can use that template to add attributes unique
+   to discreteBarChart #}
+
+{% extends "content.html" %}
+{% block body %}
+
+    {% block data %}
+        {{super()}}
+    {% endblock data %}
+
+    {% block init %}
+        {{super()}}
+    {% endblock init %}
+
+    {% block rendering_opts %}
+        {{super()}}
+    {% endblock rendering_opts %}
+
+    {% block axes %}
+        {{super()}}
+    {% endblock axes %}
+
+    {% block tooltip %}
+        {{super()}}
+    {% endblock tooltip %}
+
+    {% block custoattr %}
+    {{super()}}
+    {% endblock custoattr %}
+
+    {% block inject %}
+    {{ super() }}
+    {% endblock inject %}
+
+    {% block extras %}
+    {{ super () }}
+    {% endblock extras %}
+
+    {% block close %}
+    {{ super() }}
+    {% endblock close %}
+
+{% endblock body %}

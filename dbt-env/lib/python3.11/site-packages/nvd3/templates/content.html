@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block container %}
+{% if chart.display_container %}
+    {{ chart.container }}
+{% endif %}
+{%  endblock  container %}
+
+{% block body %}
+    {% block data %}
+        data_{{ chart.name }}={{ chart.series_js|striptags }};
+    {% endblock data %}
+
+    {% block init %}
+    nv.addGraph(function() {
+        var chart = nv.models.{{ chart.model }}(){% if chart.use_interactive_guideline %}.useInteractiveGuideline(true){% endif %}{% if not chart.show_controls %}.showControls(false){% endif %}{% if chart.right_align_y_axis %}.rightAlignYAxis(true){% endif %};
+
+        chart.margin({top: {{ chart.margin_top }}, right: {{ chart.margin_right }}, bottom: {{ chart.margin_bottom }}, left: {{ chart.margin_left }}});
+        chart.xAxis.rotateLabels({{chart.xAxis_rotateLabel}})
+        chart.xAxis.staggerLabels({{chart.xAxis_staggerLabel|lower}})
+        chart.xAxis.showMaxMin({{chart.xAxis_showMaxMin|lower}})
+        var datum = data_{{ chart.name }};
+
+    {% if not chart.color_list and chart.color_category %}
+        chart.color(d3.scale.{{ chart.color_category }}().range());
+    {% endif %}
+    {% endblock init %}
+
+    {% block rendering_opts %}
+    {% if chart.stacked %}
+        chart.stacked(true);
+    {% endif %}
+
+    {% if chart.no_data_message %}
+        chart.noData('{{chart.no_data_message}}')
+    {% endif %}
+    {% if chart.show_controls == False %}
+        chart.showControls(false);
+    {% endif %}
+    {% if chart.show_values %}
+        chart.showValues(true);
+    {% endif %}
+
+    {% endblock rendering_opts %}
+
+    {% block focus %}
+    {% endblock focus %}
+
+
+    {% block axes %}
+        {% for axis, a in chart.axislist.items() %}
+            {% if a.items() %}
+            chart.{{ axis }}
+            {% for attr, value in a.items() %}
+                .{{ attr}}({{ value}}){% if loop.last %};
+                {% endif %}
+            {% endfor %}
+            {% endif %}
+        {% endfor %}
+    {% endblock axes %}
+
+    {# generate custom tooltip for the chart #}
+    {% block tooltip %}
+        {% if chart.custom_tooltip_flag %}
+            {% if not chart.date_flag %}
+                {% if chart.model == 'pieChart' %}
+                    {% block pietooltip %}
+                    {% endblock pietooltip %}
+                {% endif %}
+            {% else %}
+                {% if chart.model in ('discreteBarChart', ) %}
+                   chart.tooltip.keyFormatter(function(d, i) {
+                       return d3.time.format("{{ chart.charttooltip_dateformat }}")(new Date(parseInt(d)));
+                   });
+                {% endif %}
+                {% if chart.model in ('linePlusBarChart', 'lineChart', 'multiBarChart', 'cumulativeLineChart', 'lineWithFocusChart') %}
+                   chart.tooltip.headerFormatter(function(d, i) {
+                       return d3.time.format("{{ chart.charttooltip_dateformat }}")(new Date(parseInt(d)));
+                   });
+                {% endif %}
+                {% if chart.model in ('stackedAreaChart', ) %}
+                   chart.interactiveLayer.tooltip.headerFormatter(function(d, i) {
+                       return d3.time.format("{{ chart.charttooltip_dateformat }}")(new Date(parseInt(d)));
+                   });
+                {% endif %}
+            {% endif %}
+        {% endif %}
+    {% endblock tooltip %}
+
+    {# the shape attribute in kwargs is not applied when #}
+    {# not allowing other shapes to be rendered #}
+    {% block legend %}
+      chart.showLegend({{chart.show_legend|lower}});
+    {% endblock legend %}
+
+    {% block custoattr %}
+        {# add custom chart attributes #}
+        {% for attr, value in chart.chart_attr.items() %}
+            {% if value is string and value.startswith(".") %}
+                chart.{{ attr }}{{ value }};
+            {% else %}
+                chart.{{ attr }}({{ value }});
+            {% endif %}
+        {% endfor %}
+
+        {% if chart.resize %}
+            nv.utils.windowResize(chart.update);
+        {% endif %}
+
+        {# include specific subchart #}
+        {{ chart.jschart }}
+
+    {% endblock custoattr %}
+
+    {% block y_axis_scale %}
+    {% if chart.y_axis_scale_min or chart.y_axis_scale_max %}
+        chart.forceY([{{ chart.y_axis_scale_min }},{{ chart.y_axis_scale_max }}]);
+    {% endif %}
+    {% endblock y_axis_scale %}
+
+    {% block inject %}
+        {# Inject data to D3 #}
+        d3.select('#{{ chart.name }} svg')
+            .datum(datum)
+            .transition().duration(500)
+            {% if chart.width %}
+            .attr('width', '{{ chart.width}}')
+            {% endif %}
+            {% if chart.height %}
+            .attr('height', {{ chart.height}})
+            {% endif %}
+            .call(chart);
+    {% endblock inject %}
+
+    {% block extras %}
+        {# extra chart attributes #}
+        {% if chart.extras %}
+            {{ chart.extras }}
+        {% endif %}
+    {% endblock extras %}
+
+    {# callback for clicking on charts #}
+    {% if chart.callback %}
+       },{{ chart.callback }});
+    {% endif %}
+
+    {# closing nv.addGraph #}
+    {% block close %}
+    });
+    {% endblock close %}
+
+{% endblock body %}
